@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fuga · 第6单元 闪卡</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #e8edf2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+        .phone-frame {
+            width: 390px;
+            max-width: 100%;
+            background: #f4f9f7;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            height: 844px;
+            max-height: 100vh;
+        }
+        .pages-container {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 8px 20px 20px 20px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .pages-container::-webkit-scrollbar { width: 0; display: none; }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0 4px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .page-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2c3e50;
+            letter-spacing: -0.3px;
+        }
+        .page-header h1 span { color: #4a9e8e; }
+        .page-header .sub {
+            font-size: 14px;
+            color: #7f8c8d;
+            font-weight: 400;
+            background: #eef2f6;
+            padding: 4px 14px;
+            border-radius: 20px;
+        }
+        .mode-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        .mode-tab {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px 0;
+            border: 2px solid #d5dce4;
+            border-radius: 30px;
+            background: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            text-align: center;
+        }
+        .mode-tab.active {
+            background: #4a9e8e;
+            border-color: #4a9e8e;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(74, 158, 142, 0.25);
+        }
+        .mode-tab i { margin-right: 4px; }
+        .card-counter {
+            text-align: center;
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+        .card-counter strong { color: #2c3e50; font-size: 18px; }
+        .flashcard {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 32px 24px 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(200, 212, 220, 0.25);
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
+            position: relative;
+        }
+        .flashcard:active { transform: scale(0.98); }
+        .flashcard .card-front { width: 100%; }
+        .flashcard .card-front .main-word {
+            font-size: 36px;
+            font-weight: 700;
+            color: #2c3e50;
+            line-height: 1.3;
+            letter-spacing: -0.3px;
+            word-break: break-word;
+        }
+        .flashcard .card-front .main-word.chinese-mode { font-size: 26px; color: #2c3e50; }
+        .flashcard .card-back {
+            width: 100%;
+            display: none;
+            animation: fadeUp 0.25s ease;
+        }
+        .flashcard .card-back .meaning {
+            font-size: 36px;
+            font-weight: 700;
+            color: #4a9e8e;
+            line-height: 1.4;
+        }
+        .flashcard .card-back .meaning.chinese-mode { font-size: 26px; color: #4a9e8e; }
+        .flashcard .card-back .meaning.italian-mode { font-size: 36px; font-weight: 700; color: #4a9e8e; }
+        .flashcard.show-back .card-front { display: none; }
+        .flashcard.show-back .card-back { display: block; }
+        .flashcard .hint-tap {
+            position: absolute;
+            bottom: 12px;
+            right: 18px;
+            font-size: 12px;
+            color: #bccbd8;
+            letter-spacing: 0.5px;
+        }
+        .flashcard .hint-tap i { margin-right: 4px; }
+        .audio-btn {
+            position: absolute;
+            bottom: 12px;
+            left: 18px;
+            background: rgba(74, 158, 142, 0.12);
+            border: none;
+            border-radius: 30px;
+            padding: 6px 14px 6px 10px;
+            font-size: 13px;
+            color: #4a9e8e;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+            transition: 0.2s;
+            backdrop-filter: blur(2px);
+        }
+        .audio-btn:hover { background: rgba(74, 158, 142, 0.2); }
+        .audio-btn:active { transform: scale(0.92); }
+        .audio-btn i { font-size: 15px; }
+        .audio-btn .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4a9e8e;
+            transition: 0.2s;
+        }
+        .audio-btn .status-dot.playing {
+            background: #e67e22;
+            animation: pulse-dot 0.8s infinite;
+        }
+        @keyframes pulse-dot {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.6; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .nav-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .nav-row button {
+            flex: 1;
+            padding: 14px 0;
+            border: none;
+            border-radius: 18px;
+            background: #e8f0ee;
+            color: #4a9e8e;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .nav-row button:active { transform: scale(0.95); }
+        .nav-row button.primary {
+            background: #4a9e8e;
+            color: #fff;
+        }
+        .nav-row button.primary:active { background: #3a7a6e; }
+        .nav-row button:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .bottom-meta {
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #a0b4c4;
+            padding: 0 4px;
+        }
+        .bottom-meta .progress-text {
+            background: #eef2f6;
+            padding: 4px 16px;
+            border-radius: 30px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        .footer-copyright {
+            margin-top: 20px;
+            padding: 16px 12px 8px 12px;
+            border-top: 1px solid #e0e8ee;
+            text-align: center;
+            font-size: 12px;
+            color: #9aabb8;
+            line-height: 1.8;
+            letter-spacing: 0.3px;
+        }
+        .footer-copyright .brand {
+            font-weight: 600;
+            color: #4a9e8e;
+            letter-spacing: 0.5px;
+        }
+        .footer-copyright .wechat {
+            color: #7f8c8d;
+            font-family: 'Courier New', monospace;
+            font-weight: 500;
+            background: #f0f4f8;
+            padding: 2px 10px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-top: 2px;
+        }
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 420px) {
+            .phone-frame {
+                width: 100%;
+                height: 100vh;
+                max-height: 100vh;
+                padding: 0;
+            }
+            body { padding: 0; background: #f4f9f7; }
+            .pages-container { padding: 8px 16px 20px 16px; }
+            .flashcard { padding: 24px 18px; min-height: 180px; }
+            .flashcard .card-front .main-word { font-size: 30px; }
+            .flashcard .card-front .main-word.chinese-mode { font-size: 22px; }
+            .flashcard .card-back .meaning { font-size: 30px; }
+            .flashcard .card-back .meaning.chinese-mode { font-size: 22px; }
+            .flashcard .card-back .meaning.italian-mode { font-size: 30px; }
+            .audio-btn { font-size: 12px; padding: 4px 12px 4px 8px; bottom: 10px; left: 12px; }
+            .footer-copyright { font-size: 11px; padding: 12px 8px 6px 8px; }
+        }
+        @media (max-width: 380px) {
+            .mode-tab { font-size: 12px; min-width: 60px; padding: 8px 0; }
+            .flashcard .card-front .main-word { font-size: 26px; }
+            .flashcard .card-front .main-word.chinese-mode { font-size: 20px; }
+            .flashcard .card-back .meaning { font-size: 26px; }
+            .flashcard .card-back .meaning.chinese-mode { font-size: 20px; }
+            .flashcard .card-back .meaning.italian-mode { font-size: 26px; }
+            .nav-row button { font-size: 13px; padding: 12px 0; }
+        }
+    </style>
+</head>
+<body>
+<div class="phone-frame">
+    <div class="pages-container" id="pagesContainer">
+        <div class="page-header">
+            <h1>✨ <span>Fuga</span> 学员专属</h1>
+            <span class="sub"><i class="fas fa-book-open"></i> 第6单元</span>
+        </div>
+        <div class="mode-tabs" id="modeTabs">
+            <button class="mode-tab active" data-mode="order"><i class="fas fa-list"></i> 顺序</button>
+            <button class="mode-tab" data-mode="shuffle"><i class="fas fa-random"></i> 乱序</button>
+            <button class="mode-tab" data-mode="chinese"><i class="fas fa-language"></i> 反推</button>
+        </div>
+        <div class="card-counter">
+            第 <strong id="currentNum">1</strong> / <span id="totalNum">0</span> 张
+        </div>
+        <div class="flashcard" id="flashcard">
+            <div class="card-front" id="cardFront">
+                <div class="main-word" id="mainWord">genitori</div>
+            </div>
+            <div class="card-back" id="cardBack">
+                <div class="meaning" id="meaningBack">父母</div>
+            </div>
+            <div class="hint-tap"><i class="fas fa-hand-pointer"></i> 点击翻转</div>
+            <button class="audio-btn" id="audioBtn" title="播放单词发音">
+                <i class="fas fa-volume-up"></i>
+                <span id="audioLabel">发音</span>
+                <span class="status-dot" id="audioDot"></span>
+            </button>
+        </div>
+        <div class="nav-row">
+            <button id="prevBtn"><i class="fas fa-arrow-left"></i> 上一张</button>
+            <button class="primary" id="nextBtn">下一张 <i class="fas fa-arrow-right"></i></button>
+        </div>
+        <div class="bottom-meta">
+            <span>✅ 已学 <span id="learnedCount">0</span></span>
+            <span class="progress-text" id="progressText">0%</span>
+        </div>
+        <div class="footer-copyright">
+            <div class="brand">口袋意语 · Fuga意大利语工作室</div>
+            <div style="font-size: 11px; color: #b0c4d0;">内部学习资料 · 未经授权不得转载、商用</div>
+            <div style="margin-top: 4px;">
+                <span class="wechat"><i class="fab fa-weixin" style="margin-right: 4px; color: #4a9e8e;"></i> FCFCFCZXFC</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // 第6单元 单词表
+    // camera da letto 出现两次：
+    //   1. luminoso 后面
+    //   2. ripostiglio 后面（在 ripostiglio 和 studio 之间）
+    // auto elettrica 释义改为 "电车"
+    // 共计314条
+    // ============================================================
+    const RAW_WORDS = [
+        { word: 'genitori', meaning: '父母' },
+        { word: 'passatempo', meaning: '消遣，娱乐' },
+        { word: 'fare bene a …', meaning: '对……有好处' },
+        { word: 'adesso', meaning: '现在' },
+        { word: 'essere in ritardo', meaning: '迟到' },
+        { word: 'camera (stanza)', meaning: '房间' },
+        { word: 'camera singola', meaning: '单人间' },
+        { word: 'camera doppia', meaning: '双人间' },
+        { word: 'posto letto', meaning: '床位' },
+        { word: 'matrimoniale', meaning: '婚姻的，结婚的' },
+        { word: 'camera matrimoniale', meaning: '大床房' },
+        { word: 'camera tripla', meaning: '三人间' },
+        { word: 'famiglia', meaning: '家庭' },
+        { word: 'camera per famiglie', meaning: '家庭房' },
+        { word: 'suite', meaning: '套房' },
+        { word: 'appartamento', meaning: '公寓' },
+        { word: 'angolo cottura', meaning: '小厨房' },
+        { word: 'vista', meaning: '视觉，视野' },
+        { word: 'mare', meaning: '大海' },
+        { word: 'montagna', meaning: '山' },
+        { word: 'con vista su …', meaning: '可以看见……' },
+        { word: 'costare', meaning: '花费' },
+        { word: 'Quanto costa?', meaning: '多少钱？' },
+        { word: 'colazione', meaning: '早餐' },
+        { word: 'incluso (compreso)', meaning: '被包含的' },
+        { word: 'prezzo', meaning: '费用' },
+        { word: 'fare', meaning: '使，让' },
+        { word: 'tariffa', meaning: '价目表' },
+        { word: 'speciale', meaning: '特别的' },
+        { word: 'soggiorno', meaning: '停留，住宿，客厅' },
+        { word: 'pieno', meaning: '满的' },
+        { word: 'animale', meaning: '动物' },
+        { word: 'domestico', meaning: '家庭的' },
+        { word: 'accettare', meaning: '接受' },
+        { word: 'credito', meaning: '信用' },
+        { word: 'Accettate carta di credito?', meaning: '你们接受信用卡吗？' },
+        { word: 'prenotare per telefono', meaning: '通过电话预订' },
+        { word: 'arrivo', meaning: '到达' },
+        { word: 'all’arrivo', meaning: '在到达的时候' },
+        { word: 'ambiente', meaning: '环境' },
+        { word: 'a due passi da…', meaning: '离……两步远' },
+        { word: 'privato', meaning: '私人的' },
+        { word: 'sotto', meaning: '在……下面' },
+        { word: 'gratis', meaning: '免费' },
+        { word: 'gratuito', meaning: '免费的' },
+        { word: 'villa', meaning: '别墅' },
+        { word: 'giardino', meaning: '花园' },
+        { word: 'palazzo', meaning: '宫殿' },
+        { word: 'doccia', meaning: '淋浴' },
+        { word: 'frigobar', meaning: '冰柜' },
+        { word: 'ammesso', meaning: '被允许的' },
+        { word: 'elegante', meaning: '优雅的' },
+        { word: 'quartiere', meaning: '居民区' },
+        { word: 'alcuni (alcune)', meaning: '一些' },
+        { word: 'a persona', meaning: '每人' },
+        { word: 'orario', meaning: '时间表' },
+        { word: 'riunione', meaning: '会议' },
+        { word: 'sala riunioni', meaning: '会议厅' },
+        { word: 'cappella', meaning: '礼拜堂' },
+        { word: 'aperto', meaning: '开放的' },
+        { word: 'passare', meaning: '度过' },
+        { word: 'albergo', meaning: '酒店' },
+        { word: 'caro', meaning: '昂贵的，亲爱的' },
+        { word: 'tranquillo', meaning: '安静的' },
+        { word: 'in centro', meaning: '在市中心' },
+        { word: 'parcheggio', meaning: '停车场' },
+        { word: 'È possibile + inf.', meaning: '可以……' },
+        { word: 'aria condizionata', meaning: '空调' },
+        { word: 'di lusso', meaning: '奢华的' },
+        { word: 'indimenticabile', meaning: '难忘的' },
+        { word: 'spazioso', meaning: '宽敞的' },
+        { word: 'mozzafiato', meaning: '令人惊叹的（永远不变）' },
+        { word: 'spa', meaning: '水疗' },
+        { word: 'benessere', meaning: '健康，养生' },
+        { word: 'viaggio d’affari', meaning: '商务出行' },
+        { word: 'vacanza', meaning: '假期' },
+        { word: 'offerta', meaning: '优惠' },
+        { word: 'sconto', meaning: '折扣' },
+        { word: 'almeno', meaning: '至少' },
+        { word: 'pulito', meaning: '干净的' },
+        { word: 'comodo', meaning: '舒适的' },
+        { word: 'conveniente', meaning: '便宜的' },
+        { word: 'spendere', meaning: '花费' },
+        { word: 'accogliente', meaning: '舒适的，温馨的' },
+        { word: 'portafoglio', meaning: '钱包' },
+        { word: 'semplice', meaning: '简单的' },
+        { word: 'confortevole', meaning: '舒适的' },
+        { word: 'personale', meaning: '工作人员' },
+        { word: 'valido', meaning: '有效的' },
+        { word: 'fino a …', meaning: '直到……' },
+        { word: 'tramonto', meaning: '日落' },
+        { word: 'cena a lume di candela', meaning: '烛光晚餐' },
+        { word: 'vasca', meaning: '浴缸' },
+        { word: 'massaggio', meaning: '按摩' },
+        { word: 'coppia', meaning: '情侣，夫妻' },
+        { word: 'cioccolatino', meaning: '巧克力糖，夹心巧克力球' },
+        { word: 'romantico', meaning: '浪漫的' },
+        { word: 'numero verde', meaning: '客服热线' },
+        { word: 'primo', meaning: '第一' },
+        { word: 'secondo', meaning: '第二' },
+        { word: 'terzo', meaning: '第三' },
+        { word: 'quarto', meaning: '第四' },
+        { word: 'quinto', meaning: '第五' },
+        { word: 'sesto', meaning: '第六' },
+        { word: 'settimo', meaning: '第七' },
+        { word: 'ottavo', meaning: '第八' },
+        { word: 'nono', meaning: '第九' },
+        { word: 'decimo', meaning: '第十' },
+        { word: 'undicesimo', meaning: '第十一' },
+        { word: 'dodicesimo', meaning: '第十二' },
+        { word: 'ventesimo', meaning: '第二十' },
+        { word: 'ventunesimo', meaning: '第二十一' },
+        { word: 'ventiduesimo', meaning: '第二十二' },
+        { word: 'ventitreesimo', meaning: '第二十三' },
+        { word: 'primavera', meaning: '春天' },
+        { word: 'estate', meaning: '夏天' },
+        { word: 'autunno', meaning: '秋天' },
+        { word: 'inverno', meaning: '冬天' },
+        { word: 'gennaio', meaning: '一月' },
+        { word: 'febbraio', meaning: '二月' },
+        { word: 'marzo', meaning: '三月' },
+        { word: 'aprile', meaning: '四月' },
+        { word: 'maggio', meaning: '五月' },
+        { word: 'giugno', meaning: '六月' },
+        { word: 'luglio', meaning: '七月' },
+        { word: 'agosto', meaning: '八月' },
+        { word: 'settembre', meaning: '九月' },
+        { word: 'ottobre', meaning: '十月' },
+        { word: 'novembre', meaning: '十一月' },
+        { word: 'dicembre', meaning: '十二月' },
+        { word: 'prossimo', meaning: '下一个' },
+        { word: 'Un attimo.', meaning: '稍等。' },
+        { word: 'quindi', meaning: '因此' },
+        { word: 'dire', meaning: '说' },
+        { word: '(io) dico', meaning: '我说' },
+        { word: '(tu) dici', meaning: '你说' },
+        { word: '(lui, lei, Lei) dice', meaning: '他/她/您说' },
+        { word: '(noi) diciamo', meaning: '我们说' },
+        { word: '(voi) dite', meaning: '你们说' },
+        { word: '(loro) dicono', meaning: '他们说' },
+        { word: 'venire', meaning: '花费' },
+        { word: 'Quanto viene?', meaning: '多少钱？' },
+        { word: 'garage', meaning: '车库' },
+        { word: 'coperto', meaning: '室内的' },
+        { word: 'all’aperto', meaning: '室外的' },
+        { word: 'lasciare', meaning: '留下' },
+        { word: 'mandare', meaning: '发送，派遣' },
+        { word: 'mail', meaning: '电子邮件' },
+        { word: 'subito', meaning: '立刻，马上' },
+        { word: 'esserci', meaning: '这里存在（有）' },
+        { word: 'prenotare', meaning: '预订' },
+        { word: 'fare la prenotazione', meaning: '预订' },
+        { word: 'per due notti', meaning: '住两晚' },
+        { word: 'conferma', meaning: '确认' },
+        { word: 'receptionist', meaning: '前台接待人员' },
+        { word: 'al telefono', meaning: '通过电话' },
+        { word: 'via e-mail', meaning: '通过邮件' },
+        { word: 'domanda', meaning: '问题' },
+        { word: 'risposta', meaning: '答复' },
+        { word: 'cliente', meaning: '顾客' },
+        { word: 'periodo', meaning: '时期' },
+        { word: 'da… a…', meaning: '从……到……' },
+        { word: 'aggiungere', meaning: '增加' },
+        { word: 'cancellare', meaning: '取消' },
+        { word: 'politica', meaning: '政策' },
+        { word: 'anticipato', meaning: '提前的' },
+        { word: 'fare il check-in', meaning: '办理入住' },
+        { word: 'trovarsi', meaning: '位于' },
+        { word: 'mezzo', meaning: '（交通）工具' },
+        { word: 'pubblico', meaning: '公共的' },
+        { word: 'arrivare', meaning: '到达' },
+        { word: 'documento', meaning: '文件，证件' },
+        { word: 'passaporto', meaning: '护照' },
+        { word: 'piano', meaning: '楼层' },
+        { word: 'bagaglio', meaning: '行李' },
+        { word: 'aiutare', meaning: '帮助' },
+        { word: 'centro spa', meaning: '水疗中心' },
+        { word: 'trattamento', meaning: '护理' },
+        { word: 'noleggiare', meaning: '租用' },
+        { word: 'ascensore', meaning: '电梯' },
+        { word: 'auto elettrica', meaning: '电车' },
+        { word: 'colonnina di ricarica', meaning: '充电桩' },
+        { word: 'conferenza', meaning: '会议' },
+        { word: 'disponibile', meaning: '可以使用的' },
+        { word: 'password', meaning: '密码' },
+        { word: 'servizio', meaning: '服务' },
+        { word: 'lavanderia', meaning: '洗衣店，洗衣处' },
+        { word: 'chiave', meaning: '钥匙' },
+        { word: 'altro', meaning: '另外的' },
+        { word: 'in più', meaning: '多余的' },
+        { word: 'cartina', meaning: '地图' },
+        { word: 'centro storico', meaning: '老城区' },
+        { word: 'evento', meaning: '活动' },
+        { word: 'concerto', meaning: '音乐会' },
+        { word: 'zona', meaning: '区域' },
+        { word: 'coperta', meaning: '被子' },
+        { word: 'funzionare', meaning: '运转，起作用' },
+        { word: 'caldo', meaning: '热的' },
+        { word: 'riscaldamento', meaning: '暖气' },
+        { word: 'cambiare', meaning: '更换' },
+        { word: 'controllare', meaning: '检查' },
+        { word: 'cuscino', meaning: '枕头，靠垫' },
+        { word: 'letto', meaning: '床' },
+        { word: 'tavolo', meaning: '桌子' },
+        { word: 'valigia', meaning: '行李箱' },
+        { word: 'carta igienica', meaning: '卫生纸' },
+        { word: 'lampada', meaning: '灯' },
+        { word: 'saponetta', meaning: '香皂' },
+        { word: 'sedia', meaning: '椅子' },
+        { word: 'armadio', meaning: '衣柜' },
+        { word: 'asciugacapelli', meaning: '吹风机（单复数同形）' },
+        { word: 'asciugamano', meaning: '毛巾' },
+        { word: 'termosifone', meaning: '暖气片' },
+        { word: 'lavandino', meaning: '水槽' },
+        { word: 'Mi dica.', meaning: '您请说。（命令式尊称）' },
+        { word: 'Ancora una cosa.', meaning: '还有一件事。' },
+        { word: 'televisore', meaning: '电视机' },
+        { word: 'inviare', meaning: '发送' },
+        { word: '(io) invio', meaning: '我发送' },
+        { word: '(tu) invii', meaning: '你发送' },
+        { word: '(lui, lei, Lei) invia', meaning: '他/她/您发送' },
+        { word: '(noi) inviamo', meaning: '我们发送' },
+        { word: '(voi) inviate', meaning: '你们发送' },
+        { word: '(loro) inviano', meaning: '他们发送' },
+        { word: 'fare il check-out', meaning: '办理退房' },
+        { word: 'posticipare', meaning: '延迟' },
+        { word: 'ricevuta', meaning: '收据' },
+        { word: 'fattura', meaning: '发票' },
+        { word: 'un milione', meaning: '一百万' },
+        { word: 'un miliardo', meaning: '十亿' },
+        { word: 'Pronto', meaning: '喂（电话用语）' },
+        { word: 'in periferia', meaning: '在郊区' },
+        { word: 'arrivare a …', meaning: '到达……' },
+        { word: 'stadio', meaning: '体育馆' },
+        { word: 'luminoso', meaning: '明亮的' },
+        { word: 'camera da letto', meaning: '卧室' },   // 第一次出现
+        { word: 'cucina', meaning: '厨房' },
+        { word: 'balcone', meaning: '阳台' },
+        { word: 'affitto', meaning: '租金' },
+        { word: 'fortunato', meaning: '幸运的' },
+        { word: 'ingresso', meaning: '入口，玄关' },
+        { word: 'ripostiglio', meaning: '储藏室' },
+        { word: 'camera da letto', meaning: '卧室' },   // 第二次出现（ripostiglio 后面，studio 前面）
+        { word: 'studio', meaning: '书房' },
+        { word: 'bagno', meaning: '卫生间' },
+        { word: 'cantina', meaning: '地窖，酒窖' },
+        { word: 'scala', meaning: '楼梯' },
+        { word: 'piano terra', meaning: '一楼' },
+        { word: 'comodino', meaning: '床头柜' },
+        { word: 'specchio', meaning: '镜子' },
+        { word: 'frigorifero', meaning: '冰箱' },
+        { word: 'lavatrice', meaning: '洗衣机' },
+        { word: 'lavastoviglie', meaning: '洗碗机' },
+        { word: 'divano', meaning: '沙发（多人）' },
+        { word: 'tappeto', meaning: '地毯' },
+        { word: 'Ufficio Postale', meaning: '邮局' },
+        { word: 'spedire', meaning: '邮寄' },
+        { word: 'pacco', meaning: '包裹' },
+        { word: 'credere', meaning: '相信，认为' },
+        { word: 'Non credo.', meaning: '我不这么认为。' },
+        { word: 'sicuro', meaning: '确定的，安全的' },
+        { word: 'Non sono sicuro.', meaning: '我不确定。' },
+        { word: 'trovare', meaning: '找到' },
+        { word: 'verso', meaning: '大概' },
+        { word: 'rimanere', meaning: '停留' },
+        { word: '(io) rimango', meaning: '我停留' },
+        { word: '(tu) rimani', meaning: '你停留' },
+        { word: '(lui, lei, Lei) rimane', meaning: '他/她/您停留' },
+        { word: '(noi) rimaniamo', meaning: '我们停留' },
+        { word: '(voi) rimanete', meaning: '你们停留' },
+        { word: '(loro) rimangono', meaning: '他们停留' },
+        { word: 'pausa pranzo', meaning: '午休' },
+        { word: 'probabilmente', meaning: '可能' },
+        { word: 'su', meaning: '在……上' },
+        { word: 'canale', meaning: '频道' },
+        { word: 'partita', meaning: '比赛' },
+        { word: 'pensare', meaning: '思考，认为' },
+        { word: 'pensare di …', meaning: '计划（打算）……' },
+        { word: 'tornare a casa', meaning: '回家' },
+        { word: 'regalo', meaning: '礼物' },
+        { word: 'compleanno', meaning: '生日' },
+        { word: 'abito', meaning: '衣服' },
+        { word: 'libreria', meaning: '书架，书柜' },
+        { word: 'poltrona', meaning: '扶手椅，单人沙发' },
+        { word: 'camino', meaning: '壁炉' },
+        { word: 'finestra', meaning: '窗户' },
+        { word: 'quadro', meaning: '画' },
+        { word: 'scrivania', meaning: '书桌/办公桌' },
+        { word: 'tavolino', meaning: '小桌子，茶几' },
+        { word: 'pianta', meaning: '植物' },
+        { word: 'parete', meaning: '墙壁（室内）' },
+        { word: 'dentro', meaning: '在里面' },
+        { word: 'fuori', meaning: '在外面' },
+        { word: 'sopra', meaning: '在……上面' },
+        { word: 'davanti a …', meaning: '在……前面' },
+        { word: 'dietro', meaning: '在……后面' },
+        { word: 'a sinistra di …', meaning: '在……左边' },
+        { word: 'a destra di …', meaning: '在……右边' },
+        { word: 'accanto a …', meaning: '在……旁边' },
+        { word: 'vicino a …', meaning: '在……附近' },
+        { word: 'intorno a …', meaning: '在……周围' },
+        { word: 'tra (fra) A e B', meaning: '在A和B之间' },
+        { word: 'di fronte a …', meaning: '在……对面' },
+        { word: 'cassetto', meaning: '抽屉' },
+        { word: 'calzino', meaning: '袜子' },
+        { word: 'giacca', meaning: '上衣，外套' },
+        { word: 'posta', meaning: '邮局' },
+        { word: 'stazione', meaning: '车站' },
+        { word: 'parco', meaning: '公园' },
+        { word: 'scatola', meaning: '盒子' },
+        { word: 'sciopero', meaning: '罢工' },
+        { word: 'generale', meaning: '普遍的，全体的' },
+        { word: 'traffico', meaning: '交通拥堵' }
+    ];
+
+    // ============================================================
+    // 状态
+    // ============================================================
+    let mode = 'order';
+    let currentIndex = 0;
+    let currentList = [];
+    let learnedSet = new Set();
+
+    let audioElement = null;
+    let isAudioPlaying = false;
+
+    // DOM
+    const flashcard = document.getElementById('flashcard');
+    const mainWord = document.getElementById('mainWord');
+    const meaningBack = document.getElementById('meaningBack');
+    const currentNum = document.getElementById('currentNum');
+    const totalNum = document.getElementById('totalNum');
+    const learnedCount = document.getElementById('learnedCount');
+    const progressText = document.getElementById('progressText');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const audioBtn = document.getElementById('audioBtn');
+    const audioLabel = document.getElementById('audioLabel');
+    const audioDot = document.getElementById('audioDot');
+
+    // ============================================================
+    // 工具
+    // ============================================================
+    function shuffleArray(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    function getDisplayList() {
+        if (mode === 'order') return [...RAW_WORDS];
+        if (mode === 'shuffle') return shuffleArray(RAW_WORDS);
+        if (mode === 'chinese') return [...RAW_WORDS];
+        return [...RAW_WORDS];
+    }
+
+    function getWordKey(item) {
+        return JSON.stringify(item);
+    }
+
+    function updateProgress() {
+        if (!currentList || currentList.length === 0) {
+            learnedCount.textContent = '0';
+            progressText.textContent = '0%';
+            return;
+        }
+        let learnedInCurrent = 0;
+        for (const item of currentList) {
+            if (learnedSet.has(getWordKey(item))) learnedInCurrent++;
+        }
+        const total = currentList.length;
+        const progress = Math.round((learnedInCurrent / total) * 100);
+        learnedCount.textContent = learnedInCurrent;
+        progressText.textContent = progress + '%';
+    }
+
+    function getRawIndex(wordObj) {
+        return RAW_WORDS.findIndex(item => 
+            item.word === wordObj.word && item.meaning === wordObj.meaning
+        );
+    }
+
+    // ============================================================
+    // 音频逻辑 (占位)
+    // ============================================================
+    function getAudioPath(rawIndex) {
+        const segNum = rawIndex + 1;
+        return `第6单元单词表 - segment ${segNum}.mp3`;
+    }
+
+    function playAudio() {
+        const currentItem = currentList[currentIndex];
+        if (!currentItem) return;
+        const rawIndex = getRawIndex(currentItem);
+        if (rawIndex === -1) {
+            audioLabel.textContent = '未找到';
+            audioDot.className = 'status-dot';
+            setTimeout(() => { audioLabel.textContent = '发音'; }, 1000);
+            return;
+        }
+        const audioSrc = getAudioPath(rawIndex);
+        if (!audioElement) {
+            audioElement = new Audio();
+            audioElement.addEventListener('ended', () => {
+                isAudioPlaying = false;
+                audioDot.className = 'status-dot';
+                audioLabel.textContent = '发音';
+            });
+            audioElement.addEventListener('error', () => {
+                isAudioPlaying = false;
+                audioDot.className = 'status-dot';
+                audioLabel.textContent = '⚠️';
+                setTimeout(() => { audioLabel.textContent = '发音'; }, 1200);
+            });
+        }
+        if (isAudioPlaying) {
+            audioElement.pause();
+            audioElement.currentTime = 0;
+            isAudioPlaying = false;
+            audioDot.className = 'status-dot';
+            audioLabel.textContent = '发音';
+            return;
+        }
+        audioElement.src = audioSrc;
+        audioElement.load();
+        audioElement.play().then(() => {
+            isAudioPlaying = true;
+            audioDot.className = 'status-dot playing';
+            audioLabel.textContent = '播放中';
+        }).catch(() => {
+            audioDot.className = 'status-dot';
+            audioLabel.textContent = '⚠️';
+            setTimeout(() => { audioLabel.textContent = '发音'; }, 1000);
+            isAudioPlaying = false;
+        });
+    }
+
+    function stopAudio() {
+        if (audioElement) {
+            audioElement.pause();
+            audioElement.currentTime = 0;
+            isAudioPlaying = false;
+            audioDot.className = 'status-dot';
+            audioLabel.textContent = '发音';
+        }
+    }
+
+    // ============================================================
+    // 渲染卡片
+    // ============================================================
+    function renderCard() {
+        if (!currentList.length) return;
+        const item = currentList[currentIndex];
+        const isChineseMode = (mode === 'chinese');
+
+        if (isChineseMode) {
+            mainWord.textContent = item.meaning;
+            mainWord.className = 'main-word chinese-mode';
+        } else {
+            mainWord.textContent = item.word;
+            mainWord.className = 'main-word';
+        }
+
+        if (isChineseMode) {
+            meaningBack.textContent = item.word;
+            meaningBack.className = 'meaning italian-mode';
+        } else {
+            meaningBack.textContent = item.meaning;
+            meaningBack.className = 'meaning chinese-mode';
+        }
+
+        const key = getWordKey(item);
+        if (learnedSet.has(key)) {
+            flashcard.classList.add('show-back');
+        } else {
+            flashcard.classList.remove('show-back');
+        }
+
+        currentNum.textContent = currentIndex + 1;
+        totalNum.textContent = currentList.length;
+        updateProgress();
+        prevBtn.disabled = (currentIndex === 0);
+        nextBtn.disabled = (currentIndex === currentList.length - 1);
+        stopAudio();
+        audioBtn.style.opacity = '1';
+        audioBtn.style.pointerEvents = 'auto';
+    }
+
+    // ============================================================
+    // 模式切换 & 导航
+    // ============================================================
+    function switchMode(newMode) {
+        mode = newMode;
+        document.querySelectorAll('.mode-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.mode === mode);
+        });
+        currentIndex = 0;
+        currentList = getDisplayList();
+        renderCard();
+        stopAudio();
+    }
+
+    function nextCard() {
+        if (currentIndex < currentList.length - 1) {
+            currentIndex++;
+            renderCard();
+        }
+    }
+
+    function prevCard() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            renderCard();
+        }
+    }
+
+    // ============================================================
+    // 事件绑定
+    // ============================================================
+    flashcard.addEventListener('click', function(e) {
+        if (e.target.closest('.audio-btn')) return;
+        const item = currentList[currentIndex];
+        if (!item) return;
+        const key = getWordKey(item);
+        this.classList.toggle('show-back');
+        if (this.classList.contains('show-back')) {
+            learnedSet.add(key);
+        }
+        updateProgress();
+    });
+
+    audioBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        playAudio();
+    });
+
+    document.querySelectorAll('.mode-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            switchMode(this.dataset.mode);
+        });
+    });
+
+    prevBtn.addEventListener('click', prevCard);
+    nextBtn.addEventListener('click', nextCard);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') nextCard();
+        if (e.key === 'ArrowLeft') prevCard();
+        if (e.key === ' ') { e.preventDefault(); flashcard.click(); }
+        if (e.key === 'p' || e.key === 'P') { e.preventDefault(); playAudio(); }
+    });
+
+    // ============================================================
+    // 初始化
+    // ============================================================
+    function init() {
+        currentList = getDisplayList();
+        renderCard();
+        console.log(`✨ Fuga学员专属 · 第6单元 闪卡已加载 (共 ${RAW_WORDS.length} 词)`);
+        console.log('💡 点击卡片翻转 → 自动标记为已学 → 进度实时更新');
+        console.log('📌 camera da letto 出现两次：');
+        console.log('   1. luminoso 后面');
+        console.log('   2. ripostiglio 后面（studio 前面）');
+        console.log('📌 auto elettrica 释义已改为 "电车"');
+    }
+
+    init();
+</script>
+</body>
+</html>
